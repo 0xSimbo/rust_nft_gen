@@ -14,7 +14,6 @@ impl Layer {
     pub fn new(name: String, folder_path: String) -> Self {
         let image_paths = get_all_files_inside_folder(&folder_path);
         let mut image_paths_with_rarity: Vec<String> = Vec::new();
-        let mut index_in_backgrounds: u32 = 0;
         for i in image_paths.iter() {
             if i.contains(get_delimiter()) {
                 let split_fn: Vec<&str> = i.split("#").collect();
@@ -41,4 +40,25 @@ impl Layer {
         let random_index = rand::random::<usize>() % self.image_paths.len();
         self.image_paths[random_index].clone()
     }
+}
+
+pub fn get_random_image_path_based_on_exception(image_paths: &Vec<String>) -> String {
+    //apply delimiter logic here
+    let mut images_with_rarity: Vec<String> = Vec::new();
+    for i in image_paths.iter() {
+        if i.contains(get_delimiter()) {
+            let split_fn: Vec<&str> = i.split("#").collect();
+            // println!("split fn = {:?}",&split_fn);
+            let temp: Vec<&str> = split_fn[1].split(".").collect();
+            let num_times_to_append: u32 = temp[0].parse().unwrap();
+
+            for j in 0..num_times_to_append {
+                images_with_rarity.push(i.clone());
+            }
+        } else {
+            images_with_rarity.push(i.clone());
+        }
+    }
+    let random_index = rand::random::<usize>() % images_with_rarity.len();
+    images_with_rarity[random_index].clone()
 }

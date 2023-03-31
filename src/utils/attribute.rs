@@ -1,12 +1,20 @@
 use serde::{Deserialize, Serialize};
 use tiny_keccak::{Hasher, Keccak};
-
+use std::fmt::{Debug, Formatter};
 #[derive(Serialize, Deserialize)]
 pub struct Attribute {
     pub trait_type: String,
     pub value: String,
 }
 
+impl Debug for Attribute {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Attribute")
+            .field("trait_type", &self.trait_type)
+            .field("value", &self.value)
+            .finish()
+    }
+}
 impl Clone for Attribute {
     fn clone(&self) -> Self {
         Self {

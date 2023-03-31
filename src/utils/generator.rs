@@ -2,11 +2,15 @@ use std::io::Write;
 
 use crate::utils::attribute::hash_attributes;
 use crate::utils::attribute::Attribute;
-use crate::utils::layer::Layer;
-
+use crate::utils::layer::{Layer,get_random_image_path_based_on_exception};
+use crate::utils::exceptions::Exception;
 // use crate::utils::attribute::Attribute;
-use crate::utils::image_gen::generate;
+use serde::{Deserialize, Serialize};
 
+use crate::utils::image_gen::generate;
+use std::collections::HashMap;
+use std::fs;
+use serde_json::Value;
 use serde_json;
 use serde_json::json;
 use std::path::Path;
@@ -15,7 +19,6 @@ struct Intermediary {
     trait_type: String,
     image_path: String,
 }
-use serde::{Deserialize, Serialize};
 struct ImageData {
     random_image_names: Vec<String>,
     attributes: Vec<Attribute>,
@@ -28,6 +31,7 @@ pub struct Generator {
     //description is a reference to a static string
     description: &'static str,
     IMAGE_PREFIX: &'static str,
+    exceptions: Vec<Exception>
 }
 
 impl Generator {
@@ -37,6 +41,7 @@ impl Generator {
         layers: Vec<Layer>,
         description: &'static str,
         IMAGE_PREFIX: &'static str,
+        exceptions: Vec<Exception>
     ) -> Self {
         Self {
             start_token_id,
@@ -44,9 +49,43 @@ impl Generator {
             layers,
             description: description,
             IMAGE_PREFIX: IMAGE_PREFIX,
+            exceptions: exceptions
         }
     }
+    fn apply_exceptions(
+        &self,
+        random_image_intermediaries: &mut Vec<Intermediary>,
+        attributes: &mut Vec<Attribute>,
+    ) {
+        for j in 0..self.layers.len() {
+            let file_path = Path::new(&random_image_intermediaries[j].image_path);
 
+            for exception in self.exceptions.iter() {
+                if exception.target_trait == random_image_intermediaries[j].image_path {
+                    let new_trait_trait_image_path =
+                        get_random_image_path_based_on_exception(&exception.matching_files.clone());
+            
+                    let value = new_trait_trait_image_path
+                        .split("#")
+                        .collect::<Vec<&str>>()[0]
+                        .split(".")
+                        .collect::<Vec<&str>>()[0];
+
+                    let trait_type = &random_image_intermediaries
+                        [exception.matching_files_render_order as usize]
+                        .trait_type;
+
+                    attributes[exception.matching_files_render_order as usize] = Attribute::new(
+                        String::from(trait_type.clone()),
+                        String::from(value),
+                    );
+                    random_image_intermediaries[exception.matching_files_render_order as usize]
+                        .image_path = new_trait_trait_image_path.to_string();
+
+                }
+            }
+        }
+    }
     fn generate_all_images_metadata_and_check_duplicates(&self) -> Vec<ImageData> {
         let num_images_per_layer_as_vec = self
             .layers
@@ -69,7 +108,7 @@ impl Generator {
         let mut i = self.start_token_id;
         //loop from start id to end id
         while i <= self.end_token_id {
-            let mut random_image_intermediaries: Vec<Intermediary> = self
+            let  mut random_image_intermediaries: Vec<Intermediary> = self
                 .layers
                 .iter()
                 .map(|layer| {
@@ -96,19 +135,13 @@ impl Generator {
                 ));
             }
 
+            self.apply_exceptions(&mut random_image_intermediaries, &mut attributes);
+
             let metadata_hash = hash_attributes(&attributes);
             if metadata_hashes.contains(&metadata_hash) {
                 println!("Duplicate metadata found, regenerating");
-                // i = i-1;
-                // continue;
             } else {
-                // let image_name = format!("{}.png",i);
-                // let stringified_json = serde_json::to_string(&json!({
-                //     "name": format!("NFT #{}",i),
-                //     "description": self.description,
-                //     "image": format!("ipfs://{}",image_name),
-                //     "attributes": &attributes
-                // })).unwrap();
+    
                 let random_image_names = random_image_intermediaries
                     .iter()
                     .map(|intermediary| {
@@ -211,4 +244,74 @@ impl Generator {
             thread.join().unwrap();
         }
     }
+
+
+    // Read JSON files, calculate rarity scores, and sort NFTs by rarity
+    //Vec<(u32, f64)>
+    pub fn rank_nfts_by_rarity(&self) {
+        let start_token_id = self.start_token_id;
+        let end_token_id = self.end_token_id;
+        let mut attribute_frequencies: HashMap<String, u32> = HashMap::new();
+        let mut nft_attributes: HashMap<u32, Vec<String>> = HashMap::new();
+        let total_nfts = (end_token_id - start_token_id + 1) as f64;
+    
+        for token_id in start_token_id..=end_token_id {
+            let json_file = fs::read_to_string(format!("./build/json/{}.json", token_id)).unwrap();
+            let json_data: Value = serde_json::from_str(&json_file).unwrap();
+            let attributes_as_str = json_data["attributes"].as_str().unwrap();
+            let attributes: Vec<Attribute> = serde_json::from_str(attributes_as_str).unwrap();
+    
+            let mut nft_attr = Vec::new();
+            for attr in attributes {
+                let trait_type = attr.trait_type;
+                let value = attr.value;
+                let key = format!("{}:{}", trait_type, value);
+                let count = attribute_frequencies.entry(key.clone()).or_insert(0);
+                *count += 1;
+                nft_attr.push(key);
+            }
+            nft_attributes.insert(token_id, nft_attr);
+        }
+    
+        let mut ranked_nfts: Vec<(u32, f64)> = Vec::new();
+    
+        for (token_id, attributes) in nft_attributes {
+            let rarity_score = attributes
+                .iter()
+                .map(|attr| {
+                    let probability = *attribute_frequencies.get(attr).unwrap() as f64 / total_nfts;
+                    -probability.log2()
+                })
+                .sum::<f64>();
+    
+            ranked_nfts.push((token_id, rarity_score));
+        }
+    
+        // Sort the ranked_nfts vector by rarity score in descending order
+        ranked_nfts.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        
+        //Output ranked_nfts as a JSON file of [{token_id: 1, rarity_score: 0.5}, {token_id: 2, rarity_score: 0.4}}]
+        let mut output = Vec::new();
+        for (token_id, rarity_score) in ranked_nfts {
+            let rarity_output = RarityOutput {
+                token_id,
+                rarity_score,
+            };
+            output.push(rarity_output);
+        }
+        let serialized = serde_json::to_string_pretty(&output).unwrap();
+        let mut file = std::fs::File::create("./build/ranked_nfts.json").unwrap();
+        file.write(serialized.as_bytes()).unwrap();
+
+        
+        // println!("Ranked NFTs by rarity: {:?}", ranked_nfts);
+    }
+
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RarityOutput {
+    token_id: u32,
+    rarity_score: f64,
 }
