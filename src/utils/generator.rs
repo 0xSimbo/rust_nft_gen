@@ -2,17 +2,17 @@ use std::io::Write;
 
 use crate::utils::attribute::hash_attributes;
 use crate::utils::attribute::Attribute;
-use crate::utils::layer::{Layer,get_random_image_path_based_on_exception};
 use crate::utils::exceptions::Exception;
+use crate::utils::layer::{get_random_image_path_based_on_exception, Layer};
 // use crate::utils::attribute::Attribute;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::image_gen::generate;
-use std::collections::HashMap;
-use std::fs;
-use serde_json::Value;
 use serde_json;
 use serde_json::json;
+use serde_json::Value;
+use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
 
 struct Intermediary {
@@ -31,7 +31,7 @@ pub struct Generator {
     //description is a reference to a static string
     description: &'static str,
     IMAGE_PREFIX: &'static str,
-    exceptions: Vec<Exception>
+    exceptions: Vec<Exception>,
 }
 
 impl Generator {
@@ -41,7 +41,7 @@ impl Generator {
         layers: Vec<Layer>,
         description: &'static str,
         IMAGE_PREFIX: &'static str,
-        exceptions: Vec<Exception>
+        exceptions: Vec<Exception>,
     ) -> Self {
         Self {
             start_token_id,
@@ -49,7 +49,7 @@ impl Generator {
             layers,
             description: description,
             IMAGE_PREFIX: IMAGE_PREFIX,
-            exceptions: exceptions
+            exceptions: exceptions,
         }
     }
     fn apply_exceptions(
@@ -64,10 +64,8 @@ impl Generator {
                 if exception.target_trait == random_image_intermediaries[j].image_path {
                     let new_trait_trait_image_path =
                         get_random_image_path_based_on_exception(&exception.matching_files.clone());
-            
-                    let value = new_trait_trait_image_path
-                        .split("#")
-                        .collect::<Vec<&str>>()[0]
+
+                    let value = new_trait_trait_image_path.split("#").collect::<Vec<&str>>()[0]
                         .split(".")
                         .collect::<Vec<&str>>()[0];
 
@@ -75,13 +73,10 @@ impl Generator {
                         [exception.matching_files_render_order as usize]
                         .trait_type;
 
-                    attributes[exception.matching_files_render_order as usize] = Attribute::new(
-                        String::from(trait_type.clone()),
-                        String::from(value),
-                    );
+                    attributes[exception.matching_files_render_order as usize] =
+                        Attribute::new(String::from(trait_type.clone()), String::from(value));
                     random_image_intermediaries[exception.matching_files_render_order as usize]
                         .image_path = new_trait_trait_image_path.to_string();
-
                 }
             }
         }
@@ -108,7 +103,7 @@ impl Generator {
         let mut i = self.start_token_id;
         //loop from start id to end id
         while i <= self.end_token_id {
-            let  mut random_image_intermediaries: Vec<Intermediary> = self
+            let mut random_image_intermediaries: Vec<Intermediary> = self
                 .layers
                 .iter()
                 .map(|layer| {
@@ -141,7 +136,6 @@ impl Generator {
             if metadata_hashes.contains(&metadata_hash) {
                 println!("Duplicate metadata found, regenerating");
             } else {
-    
                 let random_image_names = random_image_intermediaries
                     .iter()
                     .map(|intermediary| {
@@ -193,7 +187,7 @@ impl Generator {
                         "name": format!("{} #{}",IMAGE_PREFIX,&curr_id),
                         "description": description,
                         "image": format!("ipfs://ipfsHash/{}.png",&curr_id),
-                        "attributes": serde_json::to_string(&attributes).unwrap(),
+                        "attributes": &attributes
                     });
 
                     let serialized = serde_json::to_string_pretty(&json_file).unwrap();
@@ -245,7 +239,6 @@ impl Generator {
         }
     }
 
-
     // Read JSON files, calculate rarity scores, and sort NFTs by rarity
     //Vec<(u32, f64)>
     pub fn rank_nfts_by_rarity(&self) {
@@ -254,13 +247,13 @@ impl Generator {
         let mut attribute_frequencies: HashMap<String, u32> = HashMap::new();
         let mut nft_attributes: HashMap<u32, Vec<String>> = HashMap::new();
         let total_nfts = (end_token_id - start_token_id + 1) as f64;
-    
+
         for token_id in start_token_id..=end_token_id {
             let json_file = fs::read_to_string(format!("./build/json/{}.json", token_id)).unwrap();
             let json_data: Value = serde_json::from_str(&json_file).unwrap();
             let attributes_as_str = json_data["attributes"].as_str().unwrap();
             let attributes: Vec<Attribute> = serde_json::from_str(attributes_as_str).unwrap();
-    
+
             let mut nft_attr = Vec::new();
             for attr in attributes {
                 let trait_type = attr.trait_type;
@@ -272,9 +265,9 @@ impl Generator {
             }
             nft_attributes.insert(token_id, nft_attr);
         }
-    
+
         let mut ranked_nfts: Vec<(u32, f64)> = Vec::new();
-    
+
         for (token_id, attributes) in nft_attributes {
             let rarity_score = attributes
                 .iter()
@@ -283,13 +276,13 @@ impl Generator {
                     -probability.log2()
                 })
                 .sum::<f64>();
-    
+
             ranked_nfts.push((token_id, rarity_score));
         }
-    
+
         // Sort the ranked_nfts vector by rarity score in descending order
         ranked_nfts.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-        
+
         //Output ranked_nfts as a JSON file of [{token_id: 1, rarity_score: 0.5}, {token_id: 2, rarity_score: 0.4}}]
         let mut output = Vec::new();
         for (token_id, rarity_score) in ranked_nfts {
@@ -303,12 +296,9 @@ impl Generator {
         let mut file = std::fs::File::create("./build/ranked_nfts.json").unwrap();
         file.write(serialized.as_bytes()).unwrap();
 
-        
         // println!("Ranked NFTs by rarity: {:?}", ranked_nfts);
     }
-
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RarityOutput {

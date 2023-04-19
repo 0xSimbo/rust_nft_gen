@@ -11,3 +11,5 @@ generate_images :; cargo run --release
 upload_metadata :; cargo run --release && @echo "Uploading metadata to PyPI" twine upload dist/* -r pypi
 upload_images :; @echo "Uploading images to Docker Hub" docker push"
 upload_all :; @echo "Uploading all to PyPI and Docker Hub"
+
+randomize :; py randomize.py

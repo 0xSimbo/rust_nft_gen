@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use tiny_keccak::{Hasher, Keccak};
 use std::fmt::{Debug, Formatter};
+use tiny_keccak::{Hasher, Keccak};
 #[derive(Serialize, Deserialize)]
 pub struct Attribute {
     pub trait_type: String,

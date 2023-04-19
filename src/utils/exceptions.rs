@@ -36,6 +36,7 @@ impl Exception {
 
 pub fn get_exceptions() -> Vec<Exception> {
     let mut exceptions: Vec<Exception> = Vec::new();
+    return exceptions;
     let all_eye_colors = get_all_files_inside_folder("layers/Eye color");
     let all_eyes_without_cyan = all_eye_colors
         .iter()

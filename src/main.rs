@@ -19,7 +19,7 @@ use utils::layer::Layer;
 static DESCRIPTION: &'static str = "This is our super cool collection";
 static IMAGE_PREFIX: &'static str = "NFT";
 static START_TOKEN_ID: u32 = 0;
-static END_TOKEN_ID: u32 = 100;
+static END_TOKEN_ID: u32 = 10000;
 //This will generate 101 tokens (0-100)
 
 fn main() {
@@ -40,26 +40,119 @@ fn main() {
     }
     utils::before_runtime::before_runtime();
     let start_time = std::time::Instant::now();
+    // let layers = vec![
+    //     Layer::new(
+    //         String::from("Fogo"),
+    //         String::from("layers/Fogo/BG"),
+    //     ),
+    //     Layer::new(
+    //         String::from("Face"),
+    //         String::from("layers/Fogo/Wings"),
+    //     ),
+    //     Layer::new(String::from("Clothing"), String::from("layers/Fogo/Cloaks")),
+    //     Layer::new(String::from("Hair"), String::from("layers/Fogo/Skins")),
+    //     Layer::new(String::from("Weapon"), String::from("layers/Fogo/Beards")),
+    //     Layer::new(String::from("Weapon"), String::from("layers/Fogo/Eyes")),
+    //     Layer::new(String::from("Weapon"), String::from("layers/Fogo/Weapons")),
+
+    // ];
+
+    // let my_gen = Generator::new(
+    //     START_TOKEN_ID,
+    //     END_TOKEN_ID,
+    //     layers,
+    //     DESCRIPTION,
+    //     IMAGE_PREFIX,
+    //     get_exceptions(),
+    // );
+    // my_gen.run_generation();
     let layers = vec![
+        Layer::new(String::from("Body"), String::from("layers/Female/Body")),
+        Layer::new(String::from("Face"), String::from("layers/Female/Eyes")),
         Layer::new(
-            String::from("Backgrounds"),
-            String::from("layers/Background"),
+            String::from("Clothing"),
+            String::from("layers/Female/Clothing"),
         ),
         Layer::new(
-            String::from("Bottom Lid"),
-            String::from("layers/Bottom lid"),
+            String::from("Half Mask"),
+            String::from("layers/Female/Mask"),
         ),
-        Layer::new(String::from("Eye Color"), String::from("layers/Eye color")),
-        Layer::new(String::from("Eyeball"), String::from("layers/Eyeball")),
-        Layer::new(String::from("Goo"), String::from("layers/Goo")),
-        Layer::new(String::from("Iris"), String::from("layers/Iris")),
-        Layer::new(String::from("Shine"), String::from("layers/Shine")),
-        Layer::new(String::from("Top Lid"), String::from("layers/Top lid")),
+        Layer::new(String::from("Hair"), String::from("layers/Female/Hair")),
+        Layer::new(String::from("Weapon"), String::from("layers/Female/Weapon")),
+    ];
+
+    let my_gen = Generator::new(0, 100, layers, DESCRIPTION, IMAGE_PREFIX, get_exceptions());
+    my_gen.run_generation();
+
+    let layers = vec![
+        Layer::new(String::from("Body"), String::from("layers/Female/Body")),
+        Layer::new(String::from("Face"), String::from("layers/Female/Glasses")),
+        Layer::new(
+            String::from("Clothing"),
+            String::from("layers/Female/Clothing"),
+        ),
+        Layer::new(
+            String::from("Half Mask"),
+            String::from("layers/Female/Mask"),
+        ),
+        Layer::new(String::from("Hair"), String::from("layers/Female/Hat Hair")),
+        Layer::new(String::from("Weapon"), String::from("layers/Female/Weapon")),
     ];
 
     let my_gen = Generator::new(
-        START_TOKEN_ID,
-        END_TOKEN_ID,
+        100,
+        200,
+        layers,
+        DESCRIPTION,
+        IMAGE_PREFIX,
+        get_exceptions(),
+    );
+    my_gen.run_generation();
+
+    //----------MALE-------------
+    let layers = vec![
+        Layer::new(String::from("Body"), String::from("layers/Male/Body")),
+        Layer::new(String::from("Face"), String::from("layers/Male/Eyes")),
+        Layer::new(
+            String::from("Clothing"),
+            String::from("layers/Male/Clothing"),
+        ),
+        Layer::new(
+            String::from("Half Mask"),
+            String::from("layers/Female/Mask"),
+        ),
+        Layer::new(String::from("Hair"), String::from("layers/Male/Hair")),
+        // Layer::new(String::from("Weapon"), String::from("layers/Male/Weapon")),
+    ];
+
+    let my_gen = Generator::new(
+        200,
+        300,
+        layers,
+        DESCRIPTION,
+        IMAGE_PREFIX,
+        get_exceptions(),
+    );
+    my_gen.run_generation();
+
+    let layers = vec![
+        Layer::new(String::from("Body"), String::from("layers/Male/Body")),
+        Layer::new(String::from("Face"), String::from("layers/Male/Eyes")),
+        Layer::new(
+            String::from("Clothing"),
+            String::from("layers/Male/Clothing"),
+        ),
+        Layer::new(
+            String::from("Half Mask"),
+            String::from("layers/Male/Half Mask"),
+        ),
+        Layer::new(String::from("Hair"), String::from("layers/Male/Hat Hair")),
+        Layer::new(String::from("Weapon"), String::from("layers/Female/Weapon")),
+    ];
+
+    let my_gen = Generator::new(
+        300,
+        400,
         layers,
         DESCRIPTION,
         IMAGE_PREFIX,
