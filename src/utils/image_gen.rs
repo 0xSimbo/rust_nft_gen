@@ -3,7 +3,10 @@ use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, RgbImage}
 use serde_json::json;
 pub fn generate(pathToSaveTo: &str, file_names: Vec<String>) {
     let mut first_image = image::open(&file_names[0]).unwrap();
-    let mut combined_image = DynamicImage::new_rgba8(first_image.width(), first_image.height());
+    // let mut combined_image = DynamicImage::new_rgba8(first_image.width(), first_image.height()).resize(2048,2048);s
+        let mut combined_image = DynamicImage::new_rgba8(2048, 2048);
+
+
     combined_image.copy_from(&first_image, 0, 0).unwrap();
     for i in 1..file_names.len() {
         let next_image = image::open(&file_names[i]).unwrap();
